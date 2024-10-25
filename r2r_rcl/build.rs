@@ -1,8 +1,8 @@
-use std::env;
-use std::fs;
-use std::fs::OpenOptions;
-use std::path::Path;
-use std::path::PathBuf;
+use std::{
+    env, fs,
+    fs::OpenOptions,
+    path::{Path, PathBuf},
+};
 
 fn main() {
     r2r_common::print_cargo_watches();
@@ -107,6 +107,7 @@ fn gen_bindings(out_file: &Path) {
 fn touch(path: &Path) {
     OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
         .open(path)
         .unwrap_or_else(|_| panic!("Unable to create file '{}'", path.display()));

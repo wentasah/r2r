@@ -1,7 +1,11 @@
 use r2r_rcl::*;
-use std::ffi::CString;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, MutexGuard};
+use std::{
+    ffi::CString,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex, MutexGuard,
+    },
+};
 
 use lazy_static::lazy_static;
 
@@ -137,6 +141,22 @@ macro_rules! log_fatal {
         $crate::__impl_log!($logger_name, format_args!($($args)*),
                             file!(), line!(), $crate::LogSeverity::Fatal)
     }}
+}
+
+/// Causes compile time error if `use_sim_time` is unsupported.
+#[cfg(r2r__rosgraph_msgs__msg__Clock)]
+#[macro_export]
+macro_rules! assert_compiled_with_use_sim_time_support {
+    () => {};
+}
+
+/// Causes compile time error if `use_sim_time` is unsupported.
+#[cfg(not(r2r__rosgraph_msgs__msg__Clock))]
+#[macro_export]
+macro_rules! assert_compiled_with_use_sim_time_support {
+    () => {
+        compile_error!("assert_compiled_with_use_sim_time_support failed: 'rosgraph_msgs' dependency is missing!");
+    };
 }
 
 #[test]

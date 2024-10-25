@@ -5,11 +5,13 @@ use r2r_rcl::{
     rosidl_service_type_support_t,
 };
 use serde::{Deserialize, Serialize};
-use std::boxed::Box;
-use std::cell::RefCell;
-use std::convert::TryInto;
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
+use std::{
+    boxed::Box,
+    cell::RefCell,
+    convert::TryInto,
+    fmt::Debug,
+    ops::{Deref, DerefMut},
+};
 
 pub mod generated_msgs {
     #![allow(clippy::all)]
@@ -78,7 +80,7 @@ pub trait WrappedTypesupport:
 
             self.copy_to_native(unsafe { msg.as_mut().expect("not null") });
 
-            let msg_buf: &mut rcl_serialized_message_t = &mut *msg_buf
+            let msg_buf: &mut rcl_serialized_message_t = &mut msg_buf
                 .as_ref()
                 .map_err(|err| Error::from_rcl_error(*err))?
                 .borrow_mut();
@@ -91,8 +93,12 @@ pub trait WrappedTypesupport:
                 )
             };
 
-            let data_bytes = unsafe {
-                std::slice::from_raw_parts(msg_buf.buffer, msg_buf.buffer_length).to_vec()
+            let data_bytes = if msg_buf.buffer == std::ptr::null_mut() {
+                Vec::new()
+            } else {
+                unsafe {
+                    std::slice::from_raw_parts(msg_buf.buffer, msg_buf.buffer_length).to_vec()
+                }
             };
 
             Self::destroy_msg(msg);
@@ -551,8 +557,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::generated_msgs::*;
-    use super::*;
+    use super::{generated_msgs::*, *};
     use r2r_rcl::*;
 
     #[test]

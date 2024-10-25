@@ -1,10 +1,6 @@
-use futures::executor::LocalPool;
-use futures::select;
-use futures::stream::StreamExt;
-use futures::task::LocalSpawnExt;
-use futures::FutureExt;
+use futures::{executor::LocalPool, select, stream::StreamExt, task::LocalSpawnExt, FutureExt};
 
-use r2r::example_interfaces::srv::AddTwoInts;
+use r2r::{example_interfaces::srv::AddTwoInts, QosProfile};
 
 ///
 /// This example demonstrates how we can chain async service calls.
@@ -12,17 +8,19 @@ use r2r::example_interfaces::srv::AddTwoInts;
 /// Run toghtether with the client example.
 /// e.g. cargo run --example service
 /// and in another terminal cargo run --example client
-///
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = r2r::Context::create()?;
     let mut node = r2r::Node::create(ctx, "testnode", "")?;
-    let mut service = node.create_service::<AddTwoInts::Service>("/add_two_ints")?;
-    let service_delayed = node.create_service::<AddTwoInts::Service>("/add_two_ints_delayed")?;
-    let client = node.create_client::<AddTwoInts::Service>("/add_two_ints_delayed")?;
+    let mut service =
+        node.create_service::<AddTwoInts::Service>("/add_two_ints", QosProfile::default())?;
+    let service_delayed =
+        node.create_service::<AddTwoInts::Service>("/add_two_ints_delayed", QosProfile::default())?;
+    let client =
+        node.create_client::<AddTwoInts::Service>("/add_two_ints_delayed", QosProfile::default())?;
     let mut timer = node.create_wall_timer(std::time::Duration::from_millis(250))?;
     let mut timer2 = node.create_wall_timer(std::time::Duration::from_millis(2000))?;
     // wait for service to be available
-    let service_available = node.is_available(&client)?;
+    let service_available = r2r::Node::is_available(&client)?;
     let mut pool = LocalPool::new();
     let spawner = pool.spawner();
 

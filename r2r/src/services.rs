@@ -1,10 +1,11 @@
-use futures::channel::{mpsc, oneshot};
-use std::ffi::CString;
-use std::mem::MaybeUninit;
-use std::sync::{Arc, Mutex, Weak};
+use futures::channel::mpsc;
+use std::{
+    ffi::CString,
+    mem::MaybeUninit,
+    sync::{Arc, Mutex, Weak},
+};
 
-use crate::error::*;
-use crate::msg_types::*;
+use crate::{error::*, msg_types::*, QosProfile};
 use r2r_rcl::*;
 
 /// Encapsulates a service request.
@@ -56,7 +57,6 @@ where
 {
     pub rcl_handle: rcl_service_t,
     pub sender: mpsc::Sender<ServiceRequest<T>>,
-    pub outstanding_requests: Vec<oneshot::Receiver<(rmw_request_id_t, T::Response)>>,
 }
 
 impl<T: 'static> Service_ for TypedService<T>
@@ -113,13 +113,15 @@ where
 
 pub fn create_service_helper(
     node: &mut rcl_node_t, service_name: &str, service_ts: *const rosidl_service_type_support_t,
+    qos_profile: QosProfile,
 ) -> Result<rcl_service_t> {
     let mut service_handle = unsafe { rcl_get_zero_initialized_service() };
     let service_name_c_string =
         CString::new(service_name).map_err(|_| Error::RCL_RET_INVALID_ARGUMENT)?;
 
     let result = unsafe {
-        let service_options = rcl_service_get_default_options();
+        let mut service_options = rcl_service_get_default_options();
+        service_options.qos = qos_profile.into();
         rcl_service_init(
             &mut service_handle,
             node,

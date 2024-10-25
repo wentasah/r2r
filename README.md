@@ -14,7 +14,7 @@ These bindings are being written organically when things are needed by me and ot
 How to use
 --------------------
 1. Make sure you have libclang installed. (e.g. libclang-dev on ubuntu)
-2. Depend on this package in Cargo.toml: `r2r = "0.8.3"`
+2. Depend on this package in Cargo.toml: `r2r = "0.9.0"`
 3. You need to source your ROS2 installation before building/running.
 4. The bindings will rebuild automatically if/when you source your workspace(s).
 5. If you make changes to existing message types, run `cargo clean -p r2r_msg_gen` to force recompilation of the rust message types on the next build.
@@ -34,17 +34,31 @@ Since the default behavior is to build all sourced message types, build time can
 
 What works?
 --------------------
-- Up to date with ROS2 ~Dashing~ ~Eloquent~ Foxy Galactic Humble Iron
+- Up to date with ROS2 ~Dashing~ ~Eloquent~ Foxy Galactic Humble Iron Jazzy
 - Building Rust types
 - Publish/subscribe
 - Services
 - Actions
 - Parameter handling
+- Simulated time (make sure `rosgraph_msgs` is sourced when building to enable)
 - Runs on Linux, OSX, and Windows.
 
 Changelog
 --------------------
 #### [Unreleased]
+- Update for ros2 jazzy <https://github.com/sequenceplanner/r2r/pull/100>
+
+#### [0.9.0] - 2024-05-17
+- Fix unsafe precondition(s) violated with rust 1.78 <https://github.com/sequenceplanner/r2r/issues/96>. There may be more of these to fix, please report if you encounter.
+- Expose QoS settings for service clients and servers <https://github.com/sequenceplanner/r2r/pull/95>. Note, slight API change!
+- Make the order of parameters deterministic <https://github.com/sequenceplanner/r2r/pull/94>
+- Add a r2r_info example to print environmental information <https://github.com/sequenceplanner/r2r/pull/92>
+- Code cleanups <https://github.com/sequenceplanner/r2r/pull/90>, <https://github.com/sequenceplanner/r2r/pull/91>
+- Remove is_available's node mut-ref dependency <https://github.com/sequenceplanner/r2r/pull/89>. Note, slight API change!
+- Support simulated time <https://github.com/sequenceplanner/r2r/pull/88>
+
+#### [0.8.4] - 2024-03-19
+- Fix QoS for rolling <https://github.com/sequenceplanner/r2r/pull/87>
 - Update for ros2 iron <https://github.com/sequenceplanner/r2r/pull/84>
 
 #### [0.8.3] - 2024-01-14

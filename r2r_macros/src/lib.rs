@@ -1,7 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::spanned::Spanned;
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Fields};
 
 extern crate proc_macro;
 
@@ -27,7 +26,7 @@ pub fn derive_r2r_params(input: proc_macro::TokenStream) -> proc_macro::TokenStr
                 &mut self,
                 prefix: &str,
                 desc: ::std::option::Option<::r2r::Parameter>,
-                params: &mut ::std::collections::hash_map::HashMap<String, ::r2r::Parameter>,
+                params: &mut ::r2r::indexmap::IndexMap<String, ::r2r::Parameter>,
             ) -> ::r2r::Result<()> {
                 let prefix = if prefix.is_empty() {
                     String::from("")

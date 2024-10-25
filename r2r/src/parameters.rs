@@ -1,7 +1,8 @@
 use crate::{Error, Result};
-use std::{collections::HashMap, ffi::CStr};
+use std::ffi::CStr;
 
 use crate::msg_types::generated_msgs::rcl_interfaces;
+use indexmap::IndexMap;
 use r2r_rcl::*;
 
 /// ROS parameter value.
@@ -33,36 +34,62 @@ impl ParameterValue {
             ParameterValue::String(string)
         } else if !v.byte_array_value.is_null() {
             let vals = unsafe {
-                std::slice::from_raw_parts((*v.byte_array_value).values, (*v.byte_array_value).size)
+                if (*v.byte_array_value).values == std::ptr::null_mut() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(
+                        (*v.byte_array_value).values,
+                        (*v.byte_array_value).size,
+                    )
+                }
             };
             ParameterValue::ByteArray(vals.to_vec())
         } else if !v.bool_array_value.is_null() {
             let vals = unsafe {
-                std::slice::from_raw_parts((*v.bool_array_value).values, (*v.bool_array_value).size)
+                if (*v.bool_array_value).values == std::ptr::null_mut() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(
+                        (*v.bool_array_value).values,
+                        (*v.bool_array_value).size,
+                    )
+                }
             };
             ParameterValue::BoolArray(vals.to_vec())
         } else if !v.integer_array_value.is_null() {
             let vals = unsafe {
-                std::slice::from_raw_parts(
-                    (*v.integer_array_value).values,
-                    (*v.integer_array_value).size,
-                )
+                if (*v.integer_array_value).values == std::ptr::null_mut() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(
+                        (*v.integer_array_value).values,
+                        (*v.integer_array_value).size,
+                    )
+                }
             };
             ParameterValue::IntegerArray(vals.to_vec())
         } else if !v.double_array_value.is_null() {
             let vals = unsafe {
-                std::slice::from_raw_parts(
-                    (*v.double_array_value).values,
-                    (*v.double_array_value).size,
-                )
+                if (*v.double_array_value).values == std::ptr::null_mut() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(
+                        (*v.double_array_value).values,
+                        (*v.double_array_value).size,
+                    )
+                }
             };
             ParameterValue::DoubleArray(vals.to_vec())
         } else if !v.string_array_value.is_null() {
             let vals = unsafe {
-                std::slice::from_raw_parts(
-                    (*v.string_array_value).data,
-                    (*v.string_array_value).size,
-                )
+                if (*v.string_array_value).data == std::ptr::null_mut() {
+                    &[]
+                } else {
+                    std::slice::from_raw_parts(
+                        (*v.string_array_value).data,
+                        (*v.string_array_value).size,
+                    )
+                }
             };
             let s = vals
                 .iter()
@@ -190,7 +217,7 @@ impl Parameter {
 /// `parameters_derive.rs` example.
 pub trait RosParams {
     fn register_parameters(
-        &mut self, prefix: &str, param: Option<Parameter>, params: &mut HashMap<String, Parameter>,
+        &mut self, prefix: &str, param: Option<Parameter>, params: &mut IndexMap<String, Parameter>,
     ) -> Result<()>;
     fn get_parameter(&mut self, param_name: &str) -> Result<ParameterValue>;
     fn set_parameter(&mut self, param_name: &str, param_val: &ParameterValue) -> Result<()>;
@@ -202,14 +229,16 @@ macro_rules! impl_ros_params {
         impl RosParams for $type {
             fn register_parameters(
                 &mut self, prefix: &str, param: Option<Parameter>,
-                params: &mut HashMap<String, Parameter>,
+                params: &mut IndexMap<String, Parameter>,
             ) -> Result<()> {
                 if let Some(cli_param) = params.get(prefix) {
                     // Apply parameter value if set from command line or launch file
                     self.set_parameter("", &cli_param.value)
                         .map_err(|e| e.update_param_name(prefix))?;
+                    // Remove the parameter (will be re-inserted below with deterministic order)
+                    params.shift_remove(prefix);
                 }
-                // Insert (or replace) the parameter with filled-in description etc.
+                // Insert the parameter with filled-in description etc.
                 let mut param = param.unwrap();
                 param.value = $param_value_type($to_param_conv(self)?);
                 params.insert(prefix.to_owned(), param);

@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use futures::future;
-use futures::stream::StreamExt;
+use futures::{future, stream::StreamExt};
 
 use r2r::QosProfile;
 use tokio::task;
@@ -76,9 +75,10 @@ async fn client(arc_node: Arc<Mutex<r2r::Node>>) -> Result<(), r2r::Error> {
     let (client, mut timer, service_available) = {
         // Limiting the scope when locking the arc
         let mut node = arc_node.lock().unwrap();
-        let client = node.create_client::<AddTwoInts::Service>("/add_two_ints")?;
+        let client =
+            node.create_client::<AddTwoInts::Service>("/add_two_ints", QosProfile::default())?;
         let timer = node.create_wall_timer(std::time::Duration::from_secs(2))?;
-        let service_available = node.is_available(&client)?;
+        let service_available = r2r::Node::is_available(&client)?;
         (client, timer, service_available)
     };
     println!("waiting for service...");
@@ -99,7 +99,7 @@ async fn service(arc_node: Arc<Mutex<r2r::Node>>) -> Result<(), r2r::Error> {
     let mut service = {
         // Limiting the scope when locking the arc
         let mut node = arc_node.lock().unwrap();
-        node.create_service::<AddTwoInts::Service>("/add_two_ints")?
+        node.create_service::<AddTwoInts::Service>("/add_two_ints", QosProfile::default())?
     };
     loop {
         match service.next().await {

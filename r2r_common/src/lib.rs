@@ -1,14 +1,16 @@
 use os_str_bytes::RawOsString;
 use regex::*;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-use std::env;
-use std::fs::{self, File};
-use std::io::Read;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    env,
+    fs::{self, File},
+    io::Read,
+    path::Path,
+};
 
 #[cfg(not(feature = "doc-only"))]
-const SUPPORTED_ROS_DISTROS: &[&str] = &["foxy", "galactic", "humble", "iron", "rolling"];
+const SUPPORTED_ROS_DISTROS: &[&str] = &["foxy", "galactic", "humble", "iron", "jazzy", "rolling"];
 
 const WATCHED_ENV_VARS: &[&str] = &[
     "AMENT_PREFIX_PATH",
@@ -313,7 +315,6 @@ fn get_msgs_from_package(package: &Path) -> Vec<String> {
                                 &l[7..l.len() - 4] // .idl
                             };
                             let action_name = format!("{}/action/{}", file_name_str, substr);
-                            println!("found action: {}", action_name);
                             msgs.push(action_name);
                         }
                     }

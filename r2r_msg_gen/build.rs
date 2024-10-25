@@ -1,19 +1,15 @@
 use bindgen::Bindings;
-use itertools::chain;
-use itertools::iproduct;
-use itertools::Either;
-use itertools::Itertools;
-use quote::format_ident;
-use quote::quote;
+use itertools::{chain, iproduct, Either, Itertools};
+use quote::{format_ident, quote};
 use r2r_common::{camel_to_snake, RosMsg};
 use rayon::prelude::*;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-use std::io::BufWriter;
-use std::mem;
-use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::{
+    env, fs,
+    fs::{File, OpenOptions},
+    io::{prelude::*, BufWriter},
+    mem,
+    path::{Path, PathBuf},
+};
 
 const MSG_INCLUDES_FILENAME: &str = "msg_includes.h";
 const INTROSPECTION_FILENAME: &str = "introspection_functions.rs";
@@ -115,7 +111,7 @@ fn generate_includes(bindgen_dir: &Path, msg_list: &[RosMsg]) {
             } = msg;
 
             // filename is certainly CamelCase -> snake_case. convert
-            let include_filename = camel_to_snake(&name);
+            let include_filename = camel_to_snake(name);
 
             [
                 format!("#include <{module}/{prefix}/{include_filename}.h>"),
@@ -131,7 +127,7 @@ fn generate_includes(bindgen_dir: &Path, msg_list: &[RosMsg]) {
     include_lines.par_sort();
 
     // Write the file content
-    let mut writer = BufWriter::new(File::create(&msg_includes_file).unwrap());
+    let mut writer = BufWriter::new(File::create(msg_includes_file).unwrap());
     for line in include_lines {
         writeln!(writer, "{line}").unwrap();
     }
@@ -163,7 +159,6 @@ fn generate_introspecion_map(bindgen_dir: &Path, msg_list: &[RosMsg]) {
                         );
                         (key, ident)
                     })
-                    .map(|(key, ident)| (key, ident))
                     .collect(),
                 "action" => {
                     let iter1 = ACTION_SUFFICES.iter().map(|s| {
@@ -551,6 +546,7 @@ fn run_dynlink(msg_list: &[RosMsg]) {
 fn touch(path: &Path) {
     OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
         .open(path)
         .unwrap_or_else(|_| panic!("Unable to create file '{}'", path.display()));

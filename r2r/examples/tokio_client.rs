@@ -1,3 +1,5 @@
+use r2r::QosProfile;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = r2r::Context::create()?;
@@ -5,9 +7,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let duration = std::time::Duration::from_millis(2500);
 
     use r2r::example_interfaces::srv::AddTwoInts;
-    let client = node.create_client::<AddTwoInts::Service>("/add_two_ints")?;
+    let client =
+        node.create_client::<AddTwoInts::Service>("/add_two_ints", QosProfile::default())?;
     let mut timer = node.create_wall_timer(duration)?;
-    let waiting = node.is_available(&client)?;
+    let waiting = r2r::Node::is_available(&client)?;
 
     let handle = tokio::task::spawn_blocking(move || loop {
         node.spin_once(std::time::Duration::from_millis(100));

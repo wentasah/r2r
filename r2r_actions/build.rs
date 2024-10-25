@@ -1,6 +1,8 @@
-use std::fs::OpenOptions;
-use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::{
+    env, fs,
+    fs::OpenOptions,
+    path::{Path, PathBuf},
+};
 
 const BINDINGS_FILENAME: &str = "action_bindings.rs";
 
@@ -101,6 +103,7 @@ fn generate_bindings(out_file: &Path) {
 fn touch(path: &Path) {
     OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
         .open(path)
         .unwrap_or_else(|_| panic!("Unable to create file '{}'", path.display()));

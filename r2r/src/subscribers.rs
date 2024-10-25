@@ -1,12 +1,9 @@
 use futures::channel::mpsc;
 use std::ffi::CString;
 
-use crate::error::*;
-use crate::msg_types::*;
-use crate::qos::QosProfile;
+use crate::{error::*, msg_types::*, qos::QosProfile};
 use r2r_rcl::*;
-use std::ffi::c_void;
-use std::ffi::CStr;
+use std::ffi::{c_void, CStr};
 
 pub trait Subscriber_ {
     fn handle(&self) -> &rcl_subscription_t;
@@ -104,15 +101,20 @@ where
                     let handle_ptr = Box::into_raw(handle_box);
                     let ret =
                         rcl_return_loaned_message_from_subscription(handle_ptr, msg as *mut c_void);
-                    drop(Box::from_raw(handle_ptr));
-                    if ret != RCL_RET_OK as i32 {
+                    if ret == RCL_RET_OK as i32 {
+                        drop(Box::from_raw(handle_ptr));
+                    } else {
+                        let topic_str = rcl_subscription_get_topic_name(handle_ptr);
+                        let topic = CStr::from_ptr(topic_str);
+                        drop(Box::from_raw(handle_ptr));
+
                         let err_str = rcutils_get_error_string();
                         let err_str_ptr = &(err_str.str_) as *const std::os::raw::c_char;
                         let error_msg = CStr::from_ptr(err_str_ptr);
 
-                        let topic_str = rcl_subscription_get_topic_name(handle_ptr);
-                        let topic = CStr::from_ptr(topic_str);
-
+                        // Returning a loan shouldn't fail unless one of the handles or pointers
+                        // is invalid, both of which indicate a severe bug. Panicking is therefore
+                        // more appropriate than leaking the loaned message.
                         panic!(
                             "rcl_return_loaned_message_from_subscription() \
                             failed for subscription on topic {}: {}",
@@ -205,8 +207,12 @@ impl Subscriber_ for RawSubscriber {
             return false;
         }
 
-        let data_bytes = unsafe {
-            std::slice::from_raw_parts(self.msg_buf.buffer, self.msg_buf.buffer_length).to_vec()
+        let data_bytes = if self.msg_buf.buffer == std::ptr::null_mut() {
+            Vec::new()
+        } else {
+            unsafe {
+                std::slice::from_raw_parts(self.msg_buf.buffer, self.msg_buf.buffer_length).to_vec()
+            }
         };
 
         if let Err(e) = self.sender.try_send(data_bytes) {

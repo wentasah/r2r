@@ -1,7 +1,4 @@
-use futures::executor::LocalPool;
-use futures::future::FutureExt;
-use futures::stream::StreamExt;
-use futures::task::LocalSpawnExt;
+use futures::{executor::LocalPool, future::FutureExt, stream::StreamExt, task::LocalSpawnExt};
 
 use r2r::example_interfaces::action::Fibonacci;
 use std::sync::{Arc, Mutex};
@@ -10,7 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = r2r::Context::create()?;
     let mut node = r2r::Node::create(ctx, "testnode", "")?;
     let client = node.create_action_client::<Fibonacci::Action>("/fibonacci")?;
-    let action_server_available = node.is_available(&client)?;
+    let action_server_available = r2r::Node::is_available(&client)?;
 
     // signal that we are done
     let done = Arc::new(Mutex::new(false));
